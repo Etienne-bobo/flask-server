@@ -11,15 +11,15 @@
           </div>
         </div>
       </div>
-      <div class="flex justify-end
-      ">
+      <div class="flex justify-end">
         <button
           class="bg-blue-500 hover:bg-blue-700 text-white m-4 font-bold py-2 px-4 rounded"
-          @click="$refs.fileInput.click()"
+          @click="generateResponse"
         >
           Generer une reponse
         </button>
       </div>
+      <success-notification ref="successNotification" />
     </div>
     <div v-else>
       <p>Aucune information disponible</p>
@@ -28,12 +28,16 @@
 </template>
 
 <script>
+import SuccessNotification from '@/components/SuccessNotification.vue'
 export default {
   name: 'ResponseVisualization',
   data() {
     return {
       responseObject: null
     }
+  },
+  components: {
+    SuccessNotification
   },
   mounted() {
     // Load JSON file using a relative path
@@ -45,6 +49,22 @@ export default {
       .catch((error) => {
         console.error('Error loading JSON file:', error)
       })
+  },
+  methods: {
+    async generateResponse() {
+      try {
+        await fetch('http://localhost:5000/generate-document', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.responseObject)
+        })
+        this.$refs.successNotification.showNotification('Template generé avec succès!')
+      } catch (error) {
+        console.error('Error:', error)
+      }
+    }
   }
 }
 </script>

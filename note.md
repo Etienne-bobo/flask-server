@@ -12,4 +12,4 @@ npm install file-saver --save  // to save the message as a pdf file
 Backend
 pip instqll flask PyPDF2
 pip install flask-cors
-
+pip install docxtpl

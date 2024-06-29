@@ -1,11 +1,12 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, abort
 import PyPDF2
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import requests
 import json
 from datetime import datetime
+from docxtpl import DocxTemplate
 
 app = Flask(__name__)
 CORS(app)
@@ -115,6 +116,31 @@ def save_json_to_file():
 
     except Exception as e:
         abort(500, description=str(e))
+
+
+@app.route('/generate-document', methods=['POST'])
+def generate_document():
+    data = request.json
+
+    # Load the Word template file
+    template_path = os.path.join(app.root_path, 'public', 'template.docx')
+    if not os.path.exists(template_path):
+        return jsonify({'error': 'Template file not found'}), 404
+
+    doc = DocxTemplate(template_path)
+
+    # Render the document with the provided data
+    doc.render(data)
+
+    # Save the document
+    output_path = os.path.join(app.root_path, 'public', 'output.docx')
+    doc.save(output_path)
+
+    return jsonify({'message': 'Document generated', 'url': '/public/output.docx'})
+
+@app.route('/public/<path:filename>', methods=['GET'])
+def serve_file(filename):
+    return send_from_directory('public', filename)
 
 if __name__ == '__main__':
     app.run(debug=True)

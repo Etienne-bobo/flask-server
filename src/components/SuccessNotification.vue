@@ -9,14 +9,9 @@
           </svg>
           <p class="text-sm font-medium">Success!</p>
         </div>
-        <button @click="closeNotification"
+        <!-- <button @click="closeNotification"
                 class="text-white hover:text-white focus:outline-none focus:text-white">
-          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd"
-                  d="M14.293 5.293a1 1 0 011.414 1.414l-9 9a1 1 0 01-1.414 0l-9-9a1 1 0 111.414-1.414L10 12.586l4.293-4.293a1 1 0 011.414 0z"
-                  clip-rule="evenodd"/>
-          </svg>
-        </button>
+        </button> -->
       </div>
       <p class="text-sm mt-1">{{ message }}</p>
     </div>
