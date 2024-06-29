@@ -7,6 +7,9 @@ import requests
 import json
 from datetime import datetime
 from docxtpl import DocxTemplate
+from docx import Document
+import base64
+from zipfile import ZipFile
 
 app = Flask(__name__)
 CORS(app)
@@ -120,6 +123,7 @@ def save_json_to_file():
 
 @app.route('/generate-document', methods=['POST'])
 def generate_document():
+    # Generer une premiere version du document
     data = request.json
 
     # Load the Word template file
@@ -141,6 +145,48 @@ def generate_document():
 @app.route('/public/<path:filename>', methods=['GET'])
 def serve_file(filename):
     return send_from_directory('public', filename)
+
+
+def extract_images(doc):
+    images = {}
+    for rel in doc.part.rels:
+        if "image" in doc.part.rels[rel].target_ref:
+            image_stream = doc.part.rels[rel].target_part.blob
+            image_base64 = base64.b64encode(image_stream).decode('utf-8')
+            images[rel] = image_base64
+    return images
+
+@app.route('/fetch-document-content', methods=['GET'])
+def fetch_document_content():
+    docx_path = os.path.join(app.root_path, 'public', 'output.docx')
+
+    # Initialize HTML content
+    html_content = ""
+
+    try:
+        doc = Document(docx_path)
+
+        # Extract images from the document
+        images = extract_images(doc)
+
+        # Initialize a list to track processed image relationships
+        processed_images = set()
+
+        # Process paragraphs
+        for paragraph in doc.paragraphs:
+            html_content += f"<p>{paragraph.text}</p>"
+            for run in paragraph.runs:
+                if run._element.tag.endswith('drawing'):
+                    rel_id = run._element.find('.//a:blip', namespaces=run._element.nsmap).attrib[
+                        '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed']
+                    if rel_id in images and rel_id not in processed_images:
+                        html_content += f'<img src="data:image/png;base64,{images[rel_id]}"/>'
+                        processed_images.add(rel_id)
+
+    except Exception as e:
+        return jsonify({'error': f'Error reading .docx file: {str(e)}'}), 500
+
+    return jsonify({'html_content': html_content})
 
 if __name__ == '__main__':
     app.run(debug=True)
